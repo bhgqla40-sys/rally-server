@@ -25,6 +25,16 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * 未登录 / 登录过期：返回 HTTP 401，前端收到后会清掉 token、跳去登录。
+     * 它是 BusinessException 的子类，Spring 会优先匹配更具体的这个方法。
+     */
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Result<Void> handleUnauthorized(UnauthorizedException e) {
+        return Result.error(e.getCode(), e.getMessage());
+    }
+
     /** 业务异常：代码里主动 throw new BusinessException("...") */
     @ExceptionHandler(BusinessException.class)
     public Result<Void> handleBusinessException(BusinessException e) {

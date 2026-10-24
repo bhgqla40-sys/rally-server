@@ -1,0 +1,58 @@
+# 本地开发用的 MySQL + Redis（≈ 前端的 docker 版"本地 mock 服务"）
+#
+# 启动：docker compose up -d       第一次会自动下载镜像，之后秒开
+# 查看：docker compose ps          STATUS 显示 healthy 就是正常
+# 停止：docker compose down        数据不会丢（存在 Docker 的数据卷里）
+# 清空：docker compose down -v     连数据一起删掉，慎用
+#
+# 密码等配置在同目录的 .env 文件里（.env 不提交到 git，模板见 .env.example）
+
+name: rally
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: rally-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}   # 启动时自动建好这个库
+      MYSQL_USER: ${MYSQL_USER}           # 后端连接用的账号（不用 root，更规范）
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4     # 支持中文和 emoji
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+08:00         # 北京时间
+    ports:
+      # 只允许本机访问（127.0.0.1），左边是你电脑上的端口，被占用了就改 .env 里的 MYSQL_PORT
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7.4
+    container_name: rally-redis
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql-data:
+  redis-data:

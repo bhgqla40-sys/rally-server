@@ -9,13 +9,35 @@ Rally 组局助手的后端服务，前端项目是 [rally-app](https://github.c
 | 语言 | Java 21 |
 | 框架 | Spring Boot 3.5 |
 | 构建工具 | Maven（项目自带 Maven Wrapper，不用单独安装） |
-| 数据库 | MySQL（Docker 运行，下一步接入） |
+| 数据库 | MySQL 8.4（Docker 运行） |
+| 数据库访问 | MyBatis-Plus |
+| 表结构管理 | Flyway（启动时自动建表 / 改表） |
+| 缓存 | Redis 7.4（Docker 运行） |
 
 ## 环境准备
 
-只需要 **JDK 21**。终端里运行 `java -version`，看到 `21.x.x` 就可以了。
+- **JDK 21**：终端里运行 `java -version`，看到 `21.x.x` 就可以了
+- **Docker Desktop**：用来跑 MySQL 和 Redis，不用在电脑上单独安装它们
+
+## 启动数据库（MySQL + Redis）
+
+```bash
+cp .env.example .env      # 第一次需要：复制配置模板，按需改密码（已有 .env 就跳过）
+docker compose up -d      # 启动（第一次会下载镜像）
+docker compose ps         # 两个容器的 STATUS 都显示 healthy 就是正常
+```
+
+| 服务 | 地址 | 账号 / 密码 |
+| --- | --- | --- |
+| MySQL | `localhost:3306`，库名 `rally` | 见 `.env` 里的 `MYSQL_USER` / `MYSQL_PASSWORD` |
+| Redis | `localhost:6379` | 见 `.env` 里的 `REDIS_PASSWORD` |
+
+停止用 `docker compose down`，数据不会丢。
 
 ## 启动
+
+> 先确认数据库已经启动（`docker compose ps` 两个都是 healthy），否则后端会启动失败。
+> 第一次启动时 Flyway 会自动在 `rally` 库里建好所有表。
 
 **方式一：IntelliJ IDEA（推荐）**
 
@@ -33,7 +55,7 @@ Rally 组局助手的后端服务，前端项目是 [rally-app](https://github.c
 ## 试一下接口
 
 ```bash
-# 健康检查
+# 健康检查（mysql 和 redis 都显示 UP 就是连上了）
 curl http://localhost:8080/api/health
 
 # GET 带参数
@@ -70,8 +92,11 @@ curl http://localhost:8080/api/demo/fail
 ```
 rally-server
 ├── pom.xml                         # 依赖和构建配置（≈ package.json）
+├── docker-compose.yml              # 本地 MySQL + Redis
+├── .env.example                    # docker-compose 配置模板（真正的 .env 不提交）
 ├── mvnw / mvnw.cmd                 # Maven Wrapper 脚本（≈ npx，自动下载 Maven）
 ├── .mvn/wrapper/                   # Maven Wrapper 的配置
+├── docs/api.md                     # 接口清单（和前端 rally-app 对齐）
 └── src
     ├── main
     │   ├── java/com/rally
@@ -80,28 +105,41 @@ rally-server
     │   │   │   ├── Result.java
     │   │   │   ├── ResultCode.java
     │   │   │   ├── BusinessException.java
-    │   │   │   └── GlobalExceptionHandler.java
-    │   │   ├── config/                       # 配置类：跨域等
-    │   │   │   └── CorsConfig.java
-    │   │   └── controller/                   # 接口层：定义 URL 和处理请求
-    │   │       ├── HealthController.java
-    │   │       └── DemoController.java       # 学习示例，之后可删
+    │   │   │   ├── GlobalExceptionHandler.java
+    │   │   │   └── UserContext.java          # 当前登录用户是谁
+    │   │   ├── config/                       # 配置类：跨域、登录拦截器注册
+    │   │   ├── interceptor/                  # 登录拦截器：校验 token（≈ 路由守卫）
+    │   │   ├── controller/                   # 接口层：定义 URL，收参数、返回结果
+    │   │   ├── service/                      # 业务层：真正的业务逻辑
+    │   │   ├── mapper/                       # 数据层：读写数据库
+    │   │   ├── entity/                       # 实体类：和数据库表一一对应
+    │   │   ├── dto/                          # 接口的请求体 / 返回数据（和前端类型对应）
+    │   │   └── util/                         # 工具类：JWT 等
     │   └── resources
     │       ├── application.yml               # 主配置（≈ .env）
-    │       └── application-dev.yml           # 开发环境配置（≈ .env.development）
+    │       ├── application-dev.yml           # 开发环境配置（≈ .env.development）：数据库、Redis 地址
+    │       └── db/migration/                 # 建表 / 改表 SQL，Flyway 按版本号自动执行
+    │           └── V1__init_schema.sql
     └── test                                  # 测试代码
 ```
 
-后面加业务时会逐步加上这几层（一个请求的流转顺序）：
+一个请求的流转顺序：
 
 ```
-controller（接收请求） → service（业务逻辑） → mapper（读写数据库） → MySQL
+登录拦截器（校验 token） → controller（接收请求） → service（业务逻辑） → mapper（读写数据库） → MySQL
 ```
+
+以注册为例：`AuthController.register` → `AuthService.register`（检查手机号、加密密码）→ `UserMapper.insert` → `user` 表。
 
 ## 路线
 
 - [x] Spring Boot 基础骨架
-- [ ] Docker 运行 MySQL，接入数据库
-- [ ] 用户登录（JWT）
-- [ ] 组局相关业务接口
-- [ ] 部署上线
+- [x] Docker 运行 MySQL + Redis
+- [x] 接入数据库（MyBatis-Plus + Flyway），设计表结构
+- [x] 用户注册登录（JWT），H5 用手机号 + 密码
+- [ ] 微信小程序登录
+- [ ] 群组：创建、邀请码加入、我的群组
+- [ ] 固定局规则 + 场次：发布、列表、详情
+- [ ] 报名 / 取消 / 候补自动递补（并发控制）
+- [ ] AA 记账
+- [ ] 部署上线（云服务器 + Docker + Nginx + HTTPS）

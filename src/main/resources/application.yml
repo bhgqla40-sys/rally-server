@@ -13,3 +13,22 @@ spring:
     # 当前启用哪个环境的配置：dev 会额外加载 application-dev.yml
     # 以后上线时改成 prod（或启动时加参数 --spring.profiles.active=prod）
     active: dev
+  flyway:
+    # 启动时自动执行 resources/db/migration 下还没执行过的 SQL 脚本
+    enabled: true
+    locations: classpath:db/migration
+
+rally:
+  jwt:
+    # 登录 token 的有效期（天），过期后前端会收到 401，需要重新登录
+    expire-days: 30
+
+mybatis-plus:
+  configuration:
+    # 数据库的 snake_case 字段（start_at）自动对应 Java 的驼峰字段（startAt）
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+    db-config:
+      # 主键用数据库自增
+      id-type: auto
