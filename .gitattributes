@@ -1,0 +1,3 @@
+# 保证 mvnw 脚本在任何系统上都是 LF 换行，否则在 Mac/Linux 上会运行失败
+/mvnw text eol=lf
+*.cmd text eol=crlf

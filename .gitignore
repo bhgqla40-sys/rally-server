@@ -1,0 +1,27 @@
+# ===== Maven 构建产物（≈ 前端的 dist/）=====
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ===== IntelliJ IDEA =====
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# ===== VS Code =====
+.vscode/
+
+# ===== macOS =====
+.DS_Store
+._*
+
+# ===== 日志 =====
+logs/
+*.log
+
+# ===== 本地私密配置（数据库密码、密钥等，千万别提交到 git）=====
+.env
+application-local.yml

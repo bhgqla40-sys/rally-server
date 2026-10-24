@@ -1,0 +1,15 @@
+# 主配置文件（所有环境共用）
+# 类似前端的 .env + vite.config 里的 server 配置
+
+server:
+  port: 8080                # 后端端口
+  servlet:
+    context-path: /api      # 所有接口统一加 /api 前缀，例如 http://localhost:8080/api/health
+
+spring:
+  application:
+    name: rally-server
+  profiles:
+    # 当前启用哪个环境的配置：dev 会额外加载 application-dev.yml
+    # 以后上线时改成 prod（或启动时加参数 --spring.profiles.active=prod）
+    active: dev

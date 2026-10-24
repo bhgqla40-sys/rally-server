@@ -1,0 +1,9 @@
+# 开发环境配置（profiles.active=dev 时生效，会覆盖 application.yml 里的同名配置）
+# 类似前端的 .env.development
+
+logging:
+  level:
+    # 我们自己的代码打印 debug 级别日志，方便开发调试
+    com.rally: debug
+
+# 下一步接入 MySQL 时，数据库连接配置（spring.datasource）会加在这里
