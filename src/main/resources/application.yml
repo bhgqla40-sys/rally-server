@@ -13,6 +13,9 @@ spring:
     # 当前启用哪个环境的配置：dev 会额外加载 application-dev.yml
     # 以后上线时改成 prod（或启动时加参数 --spring.profiles.active=prod）
     active: dev
+  jackson:
+    # 值为 null 的字段不输出到 JSON，对应前端类型里的可选字段（avatar?: string 这种）
+    default-property-inclusion: non_null
   flyway:
     # 启动时自动执行 resources/db/migration 下还没执行过的 SQL 脚本
     enabled: true

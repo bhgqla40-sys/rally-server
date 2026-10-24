@@ -10,6 +10,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
@@ -62,7 +63,15 @@ public class GlobalExceptionHandler {
         return Result.error(ResultCode.BAD_REQUEST.getCode(), "缺少参数：" + e.getParameterName());
     }
 
-    /** 请求体不是合法的 JSON，或者字段类型对不上 */
+    /** 路径或 URL 参数类型不对，比如 /groups/abc（id 应该是数字） */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.warn("参数类型不对：{} = {}", e.getName(), e.getValue());
+        return Result.error(ResultCode.BAD_REQUEST.getCode(), "参数格式不正确：" + e.getName());
+    }
+
+    /** 请求体不是合法的 JSON，或者字段类型对不上（比如 sport 传了不存在的运动类型） */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<Void> handleNotReadable(HttpMessageNotReadableException e) {
