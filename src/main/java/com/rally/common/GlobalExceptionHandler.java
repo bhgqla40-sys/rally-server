@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
@@ -77,6 +80,21 @@ public class GlobalExceptionHandler {
     public Result<Void> handleNotReadable(HttpMessageNotReadableException e) {
         log.warn("请求体解析失败：{}", e.getMessage());
         return Result.error(ResultCode.BAD_REQUEST.getCode(), "请求体格式错误");
+    }
+
+    /** 上传的文件超过大小限制（application.yml 里的 spring.servlet.multipart.max-file-size） */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleTooLarge(MaxUploadSizeExceededException e) {
+        return Result.error(ResultCode.BAD_REQUEST.getCode(), "图片不能超过 2MB");
+    }
+
+    /** 上传接口没带文件，或者请求不是 multipart 格式 */
+    @ExceptionHandler({MissingServletRequestPartException.class, MultipartException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleMissingFile(Exception e) {
+        log.warn("上传请求格式错误：{}", e.getMessage());
+        return Result.error(ResultCode.BAD_REQUEST.getCode(), "请选择要上传的图片");
     }
 
     /** 请求的接口地址不存在 */

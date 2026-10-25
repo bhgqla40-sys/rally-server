@@ -51,7 +51,7 @@ public class GroupService {
     private static final String[] WEEKDAY_TEXT = {"", "周一", "周二", "周三", "周四", "周五", "周六", "周日"};
 
     /** 成员排序：群主 → 管理员 → 普通成员，同角色按入群先后 */
-    private static final Comparator<GroupMember> MEMBER_ORDER = Comparator
+    public static final Comparator<GroupMember> MEMBER_ORDER = Comparator
             .comparing((GroupMember m) -> m.getRole().ordinal())
             .thenComparing(GroupMember::getJoinedAt)
             .thenComparing(GroupMember::getId);
@@ -117,17 +117,10 @@ public class GroupService {
 
     /** 群组详情：只有群成员能看 */
     public GroupDetail detail(Long userId, Long groupId) {
-        RallyGroup group = groupMapper.selectById(groupId);
-        if (group == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "群组不存在");
-        }
-
+        RallyGroup group = getGroupOrThrow(groupId);
+        GroupMember me = requireMember(groupId, userId);
         List<GroupMember> memberships = memberMapper.selectList(new LambdaQueryWrapper<GroupMember>()
                 .eq(GroupMember::getGroupId, groupId));
-        GroupMember me = memberships.stream()
-                .filter(m -> m.getUserId().equals(userId))
-                .findFirst()
-                .orElseThrow(() -> new BusinessException(ResultCode.FORBIDDEN.getCode(), "你还不是这个群的成员，先用邀请码加入吧"));
 
         // 成员预览：排好序取前 10 个，再一次查出这些人的昵称头像
         List<GroupMember> preview = memberships.stream().sorted(MEMBER_ORDER).limit(MEMBER_PREVIEW_SIZE).toList();
@@ -193,12 +186,57 @@ public class GroupService {
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), alreadyJoined);
         }
 
-        long memberCount = memberMapper.selectCount(new LambdaQueryWrapper<GroupMember>()
-                .eq(GroupMember::getGroupId, group.getId()));
-        return toInfo(group, GroupRole.MEMBER, (int) memberCount, scheduleTexts(List.of(group.getId())).get(group.getId()));
+        return toInfo(group, GroupRole.MEMBER);
     }
 
-    // ------------------------------------------------------------------
+    // ---------------- 公共方法：群组管理、固定局、场次模块也会用到 ----------------
+
+    /** 查群组，不存在就报 404 */
+    public RallyGroup getGroupOrThrow(Long groupId) {
+        RallyGroup group = groupMapper.selectById(groupId);
+        if (group == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "群组不存在");
+        }
+        return group;
+    }
+
+    /** 必须是群成员，返回我在群里的成员记录（里面有我的角色） */
+    public GroupMember requireMember(Long groupId, Long userId) {
+        GroupMember me = memberMapper.selectOne(new LambdaQueryWrapper<GroupMember>()
+                .eq(GroupMember::getGroupId, groupId)
+                .eq(GroupMember::getUserId, userId));
+        if (me == null) {
+            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "你还不是这个群的成员，先用邀请码加入吧");
+        }
+        return me;
+    }
+
+    /** 必须是群主或管理员 */
+    public GroupMember requireManager(Long groupId, Long userId) {
+        GroupMember me = requireMember(groupId, userId);
+        if (!me.getRole().canManage()) {
+            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "只有群主和管理员可以操作");
+        }
+        return me;
+    }
+
+    /** 单个群组转成 GroupInfo（人数、固定局文字现查） */
+    public GroupInfo toInfo(RallyGroup group, GroupRole myRole) {
+        long memberCount = memberMapper.selectCount(new LambdaQueryWrapper<GroupMember>()
+                .eq(GroupMember::getGroupId, group.getId()));
+        return toInfo(group, myRole, (int) memberCount, scheduleTexts(List.of(group.getId())).get(group.getId()));
+    }
+
+    /** 随机生成一个 6 位邀请码（不保证不重复，插入 / 更新时靠唯一索引兜底） */
+    public String randomInviteCode() {
+        StringBuilder code = new StringBuilder(INVITE_CODE_LENGTH);
+        for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
+            code.append(INVITE_CODE_CHARS.charAt(random.nextInt(INVITE_CODE_CHARS.length())));
+        }
+        return code.toString();
+    }
+
+    // ---------------- 内部方法 ----------------
 
     private GroupInfo toInfo(RallyGroup group, GroupRole myRole, int memberCount, String scheduleText) {
         return new GroupInfo(group.getId(), group.getName(), group.getSport(), memberCount, myRole,
@@ -217,14 +255,6 @@ public class GroupService {
             }
         }
         throw new BusinessException("生成邀请码失败，请重试");
-    }
-
-    private String randomInviteCode() {
-        StringBuilder code = new StringBuilder(INVITE_CODE_LENGTH);
-        for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
-            code.append(INVITE_CODE_CHARS.charAt(random.nextInt(INVITE_CODE_CHARS.length())));
-        }
-        return code.toString();
     }
 
     private Map<Long, User> usersByIds(Collection<Long> userIds) {

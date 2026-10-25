@@ -5,6 +5,10 @@ server:
   port: 8080                # 后端端口
   servlet:
     context-path: /api      # 所有接口统一加 /api 前缀，例如 http://localhost:8080/api/health
+  tomcat:
+    # 上传的文件超过大小限制时，Tomcat 默认会直接断开连接（前端只会看到"网络异常"），
+    # 调大这个值让后端能正常返回「图片不能超过 2MB」的提示
+    max-swallow-size: 10MB
 
 spring:
   application:
@@ -16,6 +20,11 @@ spring:
   jackson:
     # 值为 null 的字段不输出到 JSON，对应前端类型里的可选字段（avatar?: string 这种）
     default-property-inclusion: non_null
+  servlet:
+    multipart:
+      # 上传文件大小限制（头像）
+      max-file-size: 2MB
+      max-request-size: 3MB
   flyway:
     # 启动时自动执行 resources/db/migration 下还没执行过的 SQL 脚本
     enabled: true
@@ -25,6 +34,12 @@ rally:
   jwt:
     # 登录 token 的有效期（天），过期后前端会收到 401，需要重新登录
     expire-days: 30
+  upload:
+    # 上传文件保存的目录（相对路径是相对于启动目录，在 IDEA 里就是项目根目录；已加入 .gitignore）
+    dir: ./uploads
+    # 返回给前端的访问地址前缀。H5 开发时走 Vite 代理，相对路径就能访问；
+    # 小程序需要完整地址，上线时改成 https://你的域名/api/uploads
+    url-prefix: /api/uploads
 
 mybatis-plus:
   configuration:

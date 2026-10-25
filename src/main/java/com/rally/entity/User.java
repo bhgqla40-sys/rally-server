@@ -31,7 +31,11 @@ public class User {
 
     private String nickname;
 
+    /** 头像地址，上传后由 FileStorageService 生成 */
     private String avatar;
+
+    /** 个人介绍 */
+    private String bio;
 
     private LocalDateTime createdAt;
 

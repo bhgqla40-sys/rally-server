@@ -10,6 +10,8 @@
 - 时间：ISO 8601 字符串，带时区，例如 `2026-10-31T19:00:00+08:00`
 - 金额：「分」为单位的整数，例如 ¥35 = `3500`
 - 枚举值：英文大写字符串，和前端 `types/index.ts` 一致，例如 `BADMINTON`、`OPEN`
+- 可选字段没有值时不出现在 JSON 里（不是 `null`），对应 TS 里的 `avatar?: string`
+- 上传的图片通过 `/api/uploads/...` 访问，不需要登录
 
 ## 接口
 
@@ -20,6 +22,8 @@
 | POST | `/auth/register` | `{ phone, password, nickname }` | `LoginResult { token, userId, nickname }` | ✅ |
 | POST | `/auth/login` | `{ phone, password }` | `LoginResult` | ✅ |
 | GET | `/users/me` | - | `MyProfile` | ✅ |
+| PUT | `/users/me` | `{ nickname, bio? }` | `MyProfile`（bio 不传表示不改，传空字符串表示清空） | ✅ |
+| POST | `/users/me/avatar` | `multipart/form-data`，文件字段名 `file` | `MyProfile`（avatar 是新头像地址；JPG/PNG/WEBP/GIF，≤ 2MB） | ✅ |
 | GET | `/users/me/signups` | `?scope=UPCOMING\|HISTORY` | `SignupRecord[]`（我的报名记录，依赖场次模块） | ⬜ |
 
 ### 群组
@@ -35,19 +39,19 @@
 
 | 方法 | 路径 | 请求体 / 参数 | 返回 data | 状态 |
 | --- | --- | --- | --- | --- |
-| GET | `/groups/{groupId}/members` | - | `GroupMember[]`（成员名单，带角色和入群时间） | ⬜ |
-| PUT | `/groups/{groupId}` | `{ name }` | `Group`（改群名，已有场次的群名一起变） | ⬜ |
-| POST | `/groups/{groupId}/invite-code` | - | `{ inviteCode }`（重新生成，旧码立即失效） | ⬜ |
-| PUT | `/groups/{groupId}/members/{memberId}` | `{ role: 'ADMIN' \| 'MEMBER' }` | `GroupMember[]`（设置 / 取消管理员） | ⬜ |
-| DELETE | `/groups/{groupId}/members/{memberId}` | - | `GroupMember[]`（移出群组） | ⬜ |
+| GET | `/groups/{groupId}/members` | - | `GroupMember[]`（成员名单，带角色和入群时间） | ✅ |
+| PUT | `/groups/{groupId}` | `{ name }` | `Group`（改群名，已有场次的群名一起变） | ✅ |
+| POST | `/groups/{groupId}/invite-code` | - | `{ inviteCode }`（重新生成，旧码立即失效） | ✅ |
+| PUT | `/groups/{groupId}/members/{memberId}` | `{ role: 'ADMIN' \| 'MEMBER' }` | `GroupMember[]`（设置 / 取消管理员） | ✅ |
+| DELETE | `/groups/{groupId}/members/{memberId}` | - | `GroupMember[]`（移出群组） | ✅ |
 
 ### 固定局 & 场次
 
 | 方法 | 路径 | 请求体 / 参数 | 返回 data | 状态 |
 | --- | --- | --- | --- | --- |
 | POST | `/game-templates` | `GameTemplateForm` | `{ firstGameId }` | ⬜ |
-| GET | `/groups/{groupId}/game-templates` | - | `GameTemplateBrief[]`（某个群的固定局） | ⬜ |
-| PUT | `/game-templates/{templateId}` | `{ active }` | `GameTemplateBrief`（暂停 / 恢复，已生成的场次不受影响） | ⬜ |
+| GET | `/groups/{groupId}/game-templates` | - | `GameTemplateBrief[]`（某个群的固定局） | ✅ |
+| PUT | `/game-templates/{templateId}` | `{ active }` | `GameTemplateBrief`（暂停 / 恢复，已生成的场次不受影响） | ✅ |
 | GET | `/games` | `?filter=ALL\|MINE\|AVAILABLE` | `GameBrief[]` | ⬜ |
 | GET | `/games/{id}` | - | `GameDetail` | ⬜ |
 | POST | `/games/{id}/signup` | - | `GameDetail`（有名额直接报上，满员进候补） | ⬜ |
