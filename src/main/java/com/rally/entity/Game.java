@@ -60,6 +60,12 @@ public class Game {
 
     private Boolean cancelled;
 
+    /** 组织者取消时填写的原因 */
+    private String cancelReason;
+
+    /** 结束后组织者是否已确认出勤 */
+    private Boolean attendanceConfirmed;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

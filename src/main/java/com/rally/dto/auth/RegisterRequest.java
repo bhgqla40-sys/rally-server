@@ -19,6 +19,10 @@ public record RegisterRequest(
 
         @NotBlank(message = "请填写昵称")
         @Size(max = 12, message = "昵称最多 12 个字")
-        String nickname
+        String nickname,
+
+        /* 可选：在小程序里注册时传 uni.login() 拿到的 code，注册后顺便绑定微信。H5 不用传 */
+        @Size(max = 128, message = "微信登录凭证格式不对")
+        String wxCode
 ) {
 }

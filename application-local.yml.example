@@ -1,0 +1,8 @@
+# 本地私密配置模板（这个模板会提交到 git）
+# 使用方法：复制一份改名为 application-local.yml（已加入 .gitignore，不会提交），填上真实的值
+# 后端启动时会自动读取项目根目录下的 application-local.yml（见 application.yml 的 spring.config.import）
+
+rally:
+  wx:
+    # 小程序 AppSecret：微信公众平台 → 开发管理 → 开发设置 → AppSecret（生成后只显示一次，记得保存）
+    app-secret:

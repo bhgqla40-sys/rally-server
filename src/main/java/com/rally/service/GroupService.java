@@ -211,6 +211,25 @@ public class GroupService {
         return me;
     }
 
+    /** 不是群成员就以普通成员身份加进来（通过分享链接报名的人用） */
+    public void ensureMember(Long groupId, Long userId) {
+        boolean exists = memberMapper.exists(new LambdaQueryWrapper<GroupMember>()
+                .eq(GroupMember::getGroupId, groupId)
+                .eq(GroupMember::getUserId, userId));
+        if (exists) {
+            return;
+        }
+        GroupMember member = new GroupMember();
+        member.setGroupId(groupId);
+        member.setUserId(userId);
+        member.setRole(GroupRole.MEMBER);
+        try {
+            memberMapper.insert(member);
+        } catch (DuplicateKeyException e) {
+            // 并发时别的请求已经加进来了，不用管
+        }
+    }
+
     /** 必须是群主或管理员 */
     public GroupMember requireManager(Long groupId, Long userId) {
         GroupMember me = requireMember(groupId, userId);

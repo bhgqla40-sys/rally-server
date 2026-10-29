@@ -13,6 +13,10 @@ server:
 spring:
   application:
     name: rally-server
+  config:
+    # 项目根目录下的 application-local.yml（已加入 .gitignore，不会提交）：放 AppSecret 这类私密配置。
+    # optional: 表示没有这个文件也能正常启动
+    import: optional:file:./application-local.yml
   profiles:
     # 当前启用哪个环境的配置：dev 会额外加载 application-dev.yml
     # 以后上线时改成 prod（或启动时加参数 --spring.profiles.active=prod）
@@ -34,6 +38,12 @@ rally:
   jwt:
     # 登录 token 的有效期（天），过期后前端会收到 401，需要重新登录
     expire-days: 30
+  wx:
+    # 小程序 AppID（公开的，和前端 manifest.json 里的 mp-weixin.appid 一致）
+    app-id: ${WX_APP_ID:wxcb89d3816bee5566}
+    # 小程序 AppSecret（私密！只能放在 application-local.yml 或环境变量 WX_APP_SECRET 里，不能提交到 git）
+    # 在微信公众平台 → 开发管理 → 开发设置 里生成
+    app-secret: ${WX_APP_SECRET:}
   upload:
     # 上传文件保存的目录（相对路径是相对于启动目录，在 IDEA 里就是项目根目录；已加入 .gitignore）
     dir: ./uploads

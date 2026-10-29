@@ -3,7 +3,10 @@ package com.rally.controller;
 import com.rally.common.Result;
 import com.rally.common.UserContext;
 import com.rally.dto.user.MyProfile;
+import com.rally.dto.user.SignupRecord;
 import com.rally.dto.user.UpdateProfileRequest;
+import com.rally.enums.SignupScope;
+import com.rally.service.GameService;
 import com.rally.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 /** 用户相关接口（需要登录），对应前端 api/user.ts */
 @RestController
 @RequestMapping("/users")
@@ -23,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
     private final UserService userService;
+    private final GameService gameService;
 
     /** GET /api/users/me  「我的」页面数据 */
     @GetMapping("/me")
@@ -34,6 +40,12 @@ public class UserController {
     @PutMapping("/me")
     public Result<MyProfile> updateMe(@Valid @RequestBody UpdateProfileRequest request) {
         return Result.success(userService.updateProfile(UserContext.getUserId(), request));
+    }
+
+    /** GET /api/users/me/signups?scope=UPCOMING|HISTORY  我的报名记录 */
+    @GetMapping("/me/signups")
+    public Result<List<SignupRecord>> mySignups(@RequestParam(defaultValue = "UPCOMING") SignupScope scope) {
+        return Result.success(gameService.mySignups(UserContext.getUserId(), scope));
     }
 
     /**

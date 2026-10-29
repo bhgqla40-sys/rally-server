@@ -19,6 +19,7 @@ import com.rally.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ public class GroupManageService {
     private final RallyGroupMapper groupMapper;
     private final GroupMemberMapper memberMapper;
     private final UserMapper userMapper;
+    private final SignupService signupService;
 
     /** 成员名单：群成员都能看 */
     public List<GroupMemberInfo> members(Long userId, Long groupId) {
@@ -102,7 +104,11 @@ public class GroupManageService {
         return memberList(groupId);
     }
 
-    /** 移出群组：群主可以移出任何人，管理员只能移出普通成员；不能移出群主和自己 */
+    /**
+     * 移出群组：群主可以移出任何人，管理员只能移出普通成员；不能移出群主和自己。
+     * 同时取消他在本群还没开始的场次里的报名和候补（空出的名额会让候补递补）。
+     */
+    @Transactional
     public List<GroupMemberInfo> removeMember(Long userId, Long groupId, Long memberId) {
         groupService.getGroupOrThrow(groupId);
         GroupMember me = groupService.requireManager(groupId, userId);
@@ -116,7 +122,7 @@ public class GroupManageService {
         }
 
         memberMapper.deleteById(target.getId());
-        // TODO 做场次模块时补上：取消他在本群还没开始的场次里的报名 / 候补，空出的名额让候补递补
+        signupService.cancelUpcomingSignupsInGroup(groupId, memberId);
         return memberList(groupId);
     }
 

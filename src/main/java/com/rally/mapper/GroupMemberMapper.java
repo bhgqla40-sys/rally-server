@@ -15,16 +15,16 @@ import java.util.List;
 public interface GroupMemberMapper extends BaseMapper<GroupMember> {
 
     /**
-     * 一次查出多个群各有多少人（GROUP BY 分组计数），避免每个群单独查一次。
+     * 一次查出多个群各有多少人（group by 分组计数），避免每个群单独查一次。
      * <script> 里可以写 MyBatis 的动态 SQL：<foreach> 把 id 列表拼成 IN (1, 2, 3)。
      */
     @Select("""
             <script>
-            SELECT group_id, COUNT(*) AS member_count
-            FROM group_member
-            WHERE group_id IN
+            select group_id, count(*) as member_count
+            from group_member
+            where group_id in
             <foreach collection="groupIds" item="id" open="(" separator="," close=")">#{id}</foreach>
-            GROUP BY group_id
+            group by group_id
             </script>
             """)
     List<GroupMemberCount> countByGroupIds(@Param("groupIds") Collection<Long> groupIds);

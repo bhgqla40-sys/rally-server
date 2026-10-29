@@ -20,46 +20,46 @@ public interface UserMapper extends BaseMapper<User> {
     // ===== 下面是「我的」页面用到的统计数字 =====
 
     /** 加入了几个群 */
-    @Select("SELECT COUNT(*) FROM group_member WHERE user_id = #{userId}")
+    @Select("select count(*) from group_member where user_id = #{userId}")
     int countGroups(@Param("userId") Long userId);
 
     /** 累计出勤：报上名、场次没取消、并且已经打完了 */
     @Select("""
-            SELECT COUNT(*)
-            FROM game_signup s
-            JOIN game g ON g.id = s.game_id
-            WHERE s.user_id = #{userId}
-              AND s.status = 'JOINED'
-              AND g.cancelled = 0
-              AND g.end_at <= NOW()
+            select count(*)
+            from game_signup s
+            join game g on g.id = s.game_id
+            where s.user_id = #{userId}
+              and s.status = 'JOINED'
+              and g.cancelled = 0
+              and g.end_at <= now()
             """)
     int countTotalAttendance(@Param("userId") Long userId);
 
     /** 某个时间之后的出勤次数（用来算本月出勤） */
     @Select("""
-            SELECT COUNT(*)
-            FROM game_signup s
-            JOIN game g ON g.id = s.game_id
-            WHERE s.user_id = #{userId}
-              AND s.status = 'JOINED'
-              AND g.cancelled = 0
-              AND g.end_at <= NOW()
-              AND g.start_at >= #{since}
+            select count(*)
+            from game_signup s
+            join game g on g.id = s.game_id
+            where s.user_id = #{userId}
+              and s.status = 'JOINED'
+              and g.cancelled = 0
+              and g.end_at <= now()
+              and g.start_at >= #{since}
             """)
     int countAttendanceSince(@Param("userId") Long userId, @Param("since") LocalDateTime since);
 
     /** 当「鸽子」的次数：截止后临时请假 */
-    @Select("SELECT COUNT(*) FROM game_signup WHERE user_id = #{userId} AND no_show = 1")
+    @Select("select count(*) from game_signup where user_id = #{userId} and no_show = 1")
     int countNoShow(@Param("userId") Long userId);
 
     /** 还没付的账单数（组织者自己垫付的不算） */
     @Select("""
-            SELECT COUNT(*)
-            FROM bill_member
-            WHERE user_id = #{userId}
-              AND paid = 0
-              AND is_organizer = 0
-              AND amount > 0
+            select count(*)
+            from bill_member
+            where user_id = #{userId}
+              and paid = 0
+              and is_organizer = 0
+              and amount > 0
             """)
     int countPendingBills(@Param("userId") Long userId);
 }

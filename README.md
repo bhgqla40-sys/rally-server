@@ -52,6 +52,18 @@ docker compose ps         # 两个容器的 STATUS 都显示 healthy 就是正�
 
 看到 `Tomcat started on port 8080` 和 `Started RallyServerApplication` 就是启动成功了。
 
+**小程序登录需要的 AppSecret（只做 H5 可以跳过）**
+
+AppSecret 是私密的，不能提交到 git。在项目根目录建一个 `application-local.yml`（已加入 `.gitignore`，模板见 `application-local.yml.example`）：
+
+```yaml
+rally:
+  wx:
+    app-secret: 你的AppSecret   # 微信公众平台 → 开发管理 → 开发设置
+```
+
+后端启动时会自动读取它。也可以用环境变量 `WX_APP_SECRET` 代替。AppID 已经写在 `application.yml` 里，和前端 `manifest.json` 一致。
+
 ## 试一下接口
 
 ```bash
@@ -137,11 +149,11 @@ rally-server
 - [x] Docker 运行 MySQL + Redis
 - [x] 接入数据库（MyBatis-Plus + Flyway），设计表结构
 - [x] 用户注册登录（JWT），H5 用手机号 + 密码
-- [ ] 微信小程序登录
+- [x] 微信小程序登录：一键登录（code2Session 换 openid）、手机号账号绑定微信
 - [x] 群组：创建、我的群组、群组详情、邀请码加入
 - [x] 群组管理：成员名单、改名、重置邀请码、设置管理员、移出成员
 - [x] 个人信息：修改昵称和个人介绍、上传头像（先存本地磁盘，以后可换 OSS）
-- [ ] 固定局规则 + 场次：发布、列表、详情
-- [ ] 报名 / 取消 / 候补自动递补（并发控制）
-- [ ] AA 记账
+- [x] 固定局规则 + 场次：发布、列表、详情、每周自动开局（@Scheduled）
+- [x] 报名 / 取消 / 候补自动递补（条件更新 + 行锁做并发控制）、组织者取消场次 / 确认出勤
+- [x] AA 记账：费用项、按到场人数分摊（金额用分）、标记已付、我已转账、我的待付款
 - [ ] 部署上线（云服务器 + Docker + Nginx + HTTPS）
